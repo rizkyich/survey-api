@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String   @id @default(cuid()) @map("_id")
+  username String
+  email    String   @unique
+  password String
+  surveys  Survey[]
+}
+
+model Survey {
+  id          String    @id @default(cuid()) @map("_id")
+  title       String
+  slug        String   @unique
+  description String
+  createdDate DateTime  @default(now())
+  status      SurveyStatus // Added field for survey status
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  questions   Question[]
+  responses   Response[]
+}
+
+model Question {
+  id        String    @id @default(cuid()) @map("_id")
+  text      String
+  type      String
+  options   String[]  @default([])
+  surveyId  String
+  survey    Survey    @relation(fields: [surveyId], references: [id])
+  responses Response[]
+}
+
+model Response {
+  id            String   @id @default(cuid()) @map("_id")
+  respondentName String
+  responseValue String
+  surveyId      String
+  survey        Survey   @relation(fields: [surveyId], references: [id])
+  questionId    String
+  question      Question @relation(fields: [questionId], references: [id])
+}
+
+enum SurveyStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum QuestionType {
+  TEXT
+  MULTIPLE_CHOICE
+  RATING
+  CHECKBOX
+  DROPDOWN
+}
