@@ -9,6 +9,12 @@ import { jwtSecret } from '../configs';
 const prisma = new PrismaClient();
 
 export async function registerUser(username: string, email: string, password: string) {
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+
+  if (existingUser) {
+    throw new HttpError(400, 'Email already exist');
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
   
   return prisma.user.create({
