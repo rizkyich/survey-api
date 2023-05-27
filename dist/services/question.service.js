@@ -8,56 +8,32 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteQuestion = exports.updateQuestion = exports.createQuestion = exports.getQuestionById = exports.getAllQuestions = void 0;
+exports.getQuestionsBySurveyId = void 0;
 const client_1 = require("@prisma/client");
+const HttpError_1 = __importDefault(require("../errors/HttpError"));
+const analyticsHelpers_1 = require("../helpers/analyticsHelpers");
 const prisma = new client_1.PrismaClient();
-function getAllQuestions(surveyId) {
+function getQuestionsBySurveyId(surveyId) {
     return __awaiter(this, void 0, void 0, function* () {
-        return prisma.question.findMany({
-            where: {
-                surveyId,
-            },
-        });
+        try {
+            const questions = yield prisma.question.findMany({ where: { surveyId } });
+            const questionsWithAnalytics = [];
+            for (const question of questions) {
+                const responses = yield prisma.response.findMany({
+                    where: { questionId: question.id },
+                });
+                const analytics = yield (0, analyticsHelpers_1.calculateQuestionAnalytics)(question, responses);
+                questionsWithAnalytics.push(Object.assign(Object.assign({}, question), { analytics }));
+            }
+            return questionsWithAnalytics;
+        }
+        catch (error) {
+            throw new HttpError_1.default(500, 'Internal server error');
+        }
     });
 }
-exports.getAllQuestions = getAllQuestions;
-function getQuestionById(id) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return prisma.question.findUnique({
-            where: {
-                id,
-            },
-        });
-    });
-}
-exports.getQuestionById = getQuestionById;
-function createQuestion(surveyId, data) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return prisma.question.create({
-            data: Object.assign(Object.assign({}, data), { surveyId }),
-        });
-    });
-}
-exports.createQuestion = createQuestion;
-function updateQuestion(id, data) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return prisma.question.update({
-            where: {
-                id,
-            },
-            data,
-        });
-    });
-}
-exports.updateQuestion = updateQuestion;
-function deleteQuestion(id) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return prisma.question.delete({
-            where: {
-                id,
-            },
-        });
-    });
-}
-exports.deleteQuestion = deleteQuestion;
+exports.getQuestionsBySurveyId = getQuestionsBySurveyId;

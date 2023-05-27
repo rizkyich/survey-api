@@ -1,7 +1,15 @@
-export enum QuestionType {
+import { Request } from "express";
+
+export enum QuestionTypeEnum {
   TextInput = 'TEXT',
-  MultipleChoice = 'MULTIPLE_CHOICE',
+  Radio = 'RADIO',
   RatingScale = 'RATING',
-  Checkbox = 'Checkbox',
-  DropdownSelect = 'Dropdown',
+  Checkbox = 'CHECKBOX',
+  DropdownSelect = 'DROPDOWN',
+}
+
+export interface RequestAuth extends Request {
+  user?: {
+    userId: string;
+  }
 }

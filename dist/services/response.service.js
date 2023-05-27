@@ -8,56 +8,44 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteResponse = exports.updateResponse = exports.createResponse = exports.getResponseById = exports.getAllResponses = void 0;
+exports.saveBulkAnswers = exports.saveAnswer = void 0;
 const client_1 = require("@prisma/client");
+const HttpError_1 = __importDefault(require("../errors/HttpError"));
 const prisma = new client_1.PrismaClient();
-function getAllResponses(surveyId) {
+function saveAnswer(respondentName, responseValue, surveyId, questionId) {
     return __awaiter(this, void 0, void 0, function* () {
-        return prisma.response.findMany({
-            where: {
+        const survey = yield prisma.survey.findUnique({ where: { id: surveyId } });
+        if (!survey) {
+            throw new HttpError_1.default(404, 'Survey Id not found');
+        }
+        const question = yield prisma.question.findUnique({ where: { id: questionId } });
+        if (!question) {
+            throw new HttpError_1.default(404, 'Question Id not found');
+        }
+        const createdResponse = yield prisma.response.create({
+            data: {
+                respondentName,
+                responseValue: JSON.stringify(Array.isArray(responseValue) ? responseValue : [responseValue]),
                 surveyId,
+                questionId,
             },
         });
+        return createdResponse;
     });
 }
-exports.getAllResponses = getAllResponses;
-function getResponseById(id) {
+exports.saveAnswer = saveAnswer;
+function saveBulkAnswers(responses) {
     return __awaiter(this, void 0, void 0, function* () {
-        return prisma.response.findUnique({
-            where: {
-                id,
-            },
-        });
+        const savedResponses = [];
+        for (const response of responses) {
+            const savedResponse = yield saveAnswer(response.respondentName, response.responseValue, response.surveyId, response.questionId);
+            savedResponses.push(savedResponse);
+        }
+        return savedResponses;
     });
 }
-exports.getResponseById = getResponseById;
-function createResponse(surveyId, data) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return prisma.response.create({
-            data: Object.assign(Object.assign({}, data), { surveyId }),
-        });
-    });
-}
-exports.createResponse = createResponse;
-function updateResponse(id, data) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return prisma.response.update({
-            where: {
-                id,
-            },
-            data,
-        });
-    });
-}
-exports.updateResponse = updateResponse;
-function deleteResponse(id) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return prisma.response.delete({
-            where: {
-                id,
-            },
-        });
-    });
-}
-exports.deleteResponse = deleteResponse;
+exports.saveBulkAnswers = saveBulkAnswers;

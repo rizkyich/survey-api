@@ -16,36 +16,38 @@ model User {
 }
 
 model Survey {
-  id          String    @id @default(cuid()) @map("_id")
+  id          String       @id @default(cuid()) @map("_id")
   title       String
-  slug        String   @unique
+  slug        String       @unique
   description String
-  createdDate DateTime  @default(now())
+  createdDate DateTime     @default(now())
   status      SurveyStatus // Added field for survey status
+  isPublished Boolean
   userId      String?
-  user        User?     @relation(fields: [userId], references: [id])
+  user        User?        @relation(fields: [userId], references: [id])
   questions   Question[]
   responses   Response[]
+  themeColor  String?
 }
 
 model Question {
-  id        String    @id @default(cuid()) @map("_id")
+  id        String       @id @default(cuid()) @map("_id")
   text      String
-  type      String
-  options   String[]  @default([])
+  type      QuestionType
+  options   String[]     @default([])
   surveyId  String
-  survey    Survey    @relation(fields: [surveyId], references: [id])
+  survey    Survey       @relation(fields: [surveyId], references: [id])
   responses Response[]
 }
 
 model Response {
-  id            String   @id @default(cuid()) @map("_id")
+  id             String   @id @default(cuid()) @map("_id")
   respondentName String
-  responseValue String
-  surveyId      String
-  survey        Survey   @relation(fields: [surveyId], references: [id])
-  questionId    String
-  question      Question @relation(fields: [questionId], references: [id])
+  responseValue  Json
+  surveyId       String
+  survey         Survey   @relation(fields: [surveyId], references: [id])
+  questionId     String
+  question       Question @relation(fields: [questionId], references: [id])
 }
 
 enum SurveyStatus {
@@ -55,7 +57,7 @@ enum SurveyStatus {
 
 enum QuestionType {
   TEXT
-  MULTIPLE_CHOICE
+  RADIO
   RATING
   CHECKBOX
   DROPDOWN

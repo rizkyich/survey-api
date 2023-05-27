@@ -1,16 +1,20 @@
-// UserController.ts
-
 import { Request, Response, NextFunction } from 'express';
+
 import { loginUser, registerUser } from '../services/auth.service';
 import HttpError from '../errors/HttpError';
+import { tokenType } from '../configs';
 
 export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
   const { email, password } = req.body;
 
   try {
     const token = await loginUser(email, password);
-    res.json({ token });
+    res.json({
+      token,
+      tokenType
+    });
   } catch (error) {
+    console.log(error)
     if (error instanceof HttpError) {
       next(error);
     } else {

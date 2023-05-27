@@ -3,15 +3,14 @@ import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 
 import HttpError from '../errors/HttpError';
+import { jwtSecret } from '../configs';
 
 // Prisma client instance
 const prisma = new PrismaClient();
 
-// Secret key for JWT
-const jwtSecret = 'your-secret-key';
-
 export async function registerUser(username: string, email: string, password: string) {
   const hashedPassword = await bcrypt.hash(password, 10);
+  
   return prisma.user.create({
     data: {
       username,

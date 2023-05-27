@@ -12,47 +12,42 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.register = exports.login = void 0;
-const auth_service_1 = require("../services/auth.service");
+exports.saveBulkResponsesController = exports.saveResponseController = void 0;
+const response_service_1 = require("../services/response.service");
 const HttpError_1 = __importDefault(require("../errors/HttpError"));
-const configs_1 = require("../configs");
-function login(req, res, next) {
+function saveResponseController(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { email, password } = req.body;
         try {
-            const token = yield (0, auth_service_1.loginUser)(email, password);
-            res.json({
-                token,
-                tokenType: configs_1.tokenType
-            });
+            const { respondentName, responseValue, surveyId, questionId } = req.body;
+            const response = yield (0, response_service_1.saveAnswer)(respondentName, responseValue, surveyId, questionId);
+            res.status(201).json(response);
         }
         catch (error) {
-            console.log(error);
             if (error instanceof HttpError_1.default) {
-                next(error);
+                res.status(error.statusCode).json({ message: error.message });
             }
             else {
-                next(new HttpError_1.default(500, 'Internal Server Error'));
+                res.status(500).json({ message: 'Internal Server Error' });
             }
         }
     });
 }
-exports.login = login;
-function register(req, res, next) {
+exports.saveResponseController = saveResponseController;
+function saveBulkResponsesController(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { username, email, password } = req.body;
         try {
-            const user = yield (0, auth_service_1.registerUser)(username, email, password);
-            res.status(201).json(user);
+            const { responses } = req.body;
+            // Ensure that the 'responses' field is provided in the request body
+            if (!responses || !Array.isArray(responses)) {
+                throw new HttpError_1.default(400, 'Invalid data format');
+            }
+            // Save bulk responses
+            const savedResponses = yield (0, response_service_1.saveBulkAnswers)(responses);
+            res.status(200).json({ savedResponses });
         }
         catch (error) {
-            if (error instanceof HttpError_1.default) {
-                next(error);
-            }
-            else {
-                next(new HttpError_1.default(500, 'Internal Server Error'));
-            }
+            next(error);
         }
     });
 }
-exports.register = register;
+exports.saveBulkResponsesController = saveBulkResponsesController;

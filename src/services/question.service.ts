@@ -1,45 +1,27 @@
 import { PrismaClient } from '@prisma/client';
 
+import { QuestionWithAnalytics } from '../interfaces/question.interface';
+import HttpError from '../errors/HttpError';
+import { calculateQuestionAnalytics } from '../helpers/analyticsHelpers';
+
 const prisma = new PrismaClient();
 
-export async function getAllQuestions(surveyId: string) {
-  return prisma.question.findMany({
-    where: {
-      surveyId,
-    },
-  });
-}
+export async function getQuestionsBySurveyId(surveyId: string): Promise<QuestionWithAnalytics[]> {
+  try {
+    const questions = await prisma.question.findMany({ where: { surveyId } });
+    const questionsWithAnalytics: QuestionWithAnalytics[] = [];
 
-export async function getQuestionById(id: string) {
-  return prisma.question.findUnique({
-    where: {
-      id,
-    },
-  });
-}
+    for (const question of questions) {
+      const responses = await prisma.response.findMany({
+        where: { questionId: question.id },
+      });
 
-export async function createQuestion(surveyId: string, data: any) {
-  return prisma.question.create({
-    data: {
-      ...data,
-      surveyId,
-    },
-  });
-}
+      const analytics = await calculateQuestionAnalytics(question, responses);
+      questionsWithAnalytics.push({ ...question, analytics });
+    }
 
-export async function updateQuestion(id: string, data: any) {
-  return prisma.question.update({
-    where: {
-      id,
-    },
-    data,
-  });
-}
-
-export async function deleteQuestion(id: string) {
-  return prisma.question.delete({
-    where: {
-      id,
-    },
-  });
+    return questionsWithAnalytics;
+  } catch (error) {
+    throw new HttpError(500, 'Internal server error');
+  }
 }
